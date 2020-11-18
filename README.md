@@ -1,1 +1,1 @@
-## Wiki available in Wiki Tab
+## Wiki available in the wiki tab
