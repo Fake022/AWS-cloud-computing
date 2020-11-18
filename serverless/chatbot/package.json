@@ -1,0 +1,11 @@
+{
+  "name": "chatbot",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {
+    "aws-sdk": "^2.783.0"
+  },
+  "devDependencies": {
+    "serverless-import-apigateway": "^1.1.1"
+  }
+}

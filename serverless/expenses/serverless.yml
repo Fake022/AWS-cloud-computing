@@ -1,0 +1,63 @@
+service: expenses
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-2
+  tracing:
+    apiGateway: true
+    lambda: true
+  apiGateway:
+    restApiId: k8sjcbmqde
+    restApiRootResourceId: 3et3hse7ki
+  environment:
+    RECEIPTS_TABLE: user_finances
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:eu-west-2:843314631316:table/user_finances"
+
+functions:
+  expenses_get:
+    handler: expenses.get
+    events:
+      - http:
+          path: /receipts
+          method: get
+          authorizer:
+            name: AuthorizationReceipts
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+  expenses_post:
+    handler: expenses.post
+    events:
+      - http:
+          path: /receipts
+          method: post
+          authorizer:
+            name: AuthorizationReceipts
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+
+plugins:
+  - serverless-import-apigateway
+resources:
+ Resources:
+   receipts:
+     Type: AWS::DynamoDB::Table
+     Properties:
+       TableName: user_finances
+       AttributeDefinitions:
+         - AttributeName: userId
+           AttributeType: S
+       KeySchema:
+         - AttributeName: userId
+           KeyType: HASH
+       BillingMode: PAY_PER_REQUEST

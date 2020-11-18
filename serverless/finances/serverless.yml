@@ -1,0 +1,45 @@
+service: finances
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-2
+  apiGateway:
+    restApiId: k8sjcbmqde
+    restApiRootResourceId: 3et3hse7ki
+  environment:
+    BUDGETS_TABLE: user_finances
+  tracing:
+    apiGateway: true
+    lambda: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:eu-west-2:843314631316:table/user_finances"
+
+functions:
+  finances_get:
+    handler: finances.get
+    events:
+      - http:
+          path: /finances
+          method: get
+          authorizer:
+            name: AuthorizationFinances
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+
+plugins:
+  - serverless-import-apigateway
+custom:
+  importApiGateway:
+    name: ${self:provider.stage}-user-home

@@ -1,0 +1,25 @@
+service: account
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-2
+  environment:
+    FINANCES_TABLE: user_finances
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:eu-west-2:843314631316:table/user_finances"
+
+functions:
+  setUpDatabase:
+    handler: handler.setUpDatabase

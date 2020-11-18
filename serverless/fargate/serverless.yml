@@ -1,0 +1,81 @@
+service: my-fargate-pdf
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  logRetentionInDays: 1
+  stage: dev
+  region: eu-west-2
+  apiGateway:
+    restApiId: k8sjcbmqde
+    restApiRootResourceId: 3et3hse7ki
+
+  environment:
+    PDF_BUCKET: "fargate-receipts-pdf-bucket"
+    CONTAINER_NAME: "pdf_generator_container"
+    ECS_CLUSTER: !GetAtt FargateECSCluster.Arn
+    ECS_TASK_ARN: !Ref FargateECSTaskDefinition
+    ECS_SUBNET: !Ref FargateSubnet
+    ECS_SEC_GROUP: !Ref FargateSG
+    RECEIPTS_TABLE: "user_finances"
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:ListBucket"
+      Resource: !Sub
+          - "arn:aws:s3:::#{BucketName}/*"
+          - BucketName: "fargate-receipts-pdf-bucket"
+
+    - Effect: Allow
+      Action:
+        - ecs:RunTask
+      Resource:
+        - !Ref FargateECSTaskDefinition
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource:
+        - !GetAtt FargateExecutionRole.Arn
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource:
+        - !GetAtt FargateTaskRole.Arn
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+      Resource:
+        - "arn:aws:dynamodb:eu-west-2:843314631316:table/user_finances"
+
+functions:
+  launchGenerationPDF:
+    handler: handler.launch
+    events:
+      - http:
+          path: /send-receipts
+          method: get
+          authorizer:
+            name: AuthorizationPdf
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+      - s3:
+          bucket: fargate-receipts-pdf-bucket
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .pdf
+
+
+resources:
+  - AWSTemplateFormatVersion: "2010-09-09"
+    Transform: "AWS::Serverless-2016-10-31"
+  - ${file(./fargate-template.yml)}
+
+plugins:
+  - serverless-cloudformation-sub-variables
+  - serverless-import-apigateway
+
+custom:
+  importApiGateway:
+    name: ${self:provider.stage}-user-home

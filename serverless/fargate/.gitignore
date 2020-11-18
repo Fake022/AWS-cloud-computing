@@ -1,0 +1,3 @@
+node_modules
+.serverless
+pdf-gen/node_modules

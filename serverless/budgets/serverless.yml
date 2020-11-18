@@ -1,0 +1,53 @@
+service: budgets
+
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: eu-west-2
+  apiGateway:
+    restApiId: ajexrc4gb4
+    restApiRootResourceId: qkfc6i9nvg
+  environment:
+    BUDGETS_TABLE: user_finances
+  tracing:
+    apiGateway: true
+    lambda: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:eu-west-2:843314631316:table/user_finances"
+
+functions:
+  budgets_get:
+    handler: budgets.get
+    events:
+      - http:
+          path: /budgets
+          method: get
+          authorizer:
+            name: AuthorizationBudgets
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+  budgets_post:
+    handler: budgets.post
+    events:
+      - http:
+          path: /budgets
+          method: put
+          authorizer:
+            name: AuthorizationBudgets
+            arn: arn:aws:cognito-idp:eu-west-2:843314631316:userpool/eu-west-2_kT5EeqP0M
+plugins:
+  - serverless-import-apigateway
+custom:
+  importApiGateway:
+    name: ${self:provider.stage}-user-home
